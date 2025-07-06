@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aligned Vertical Clock</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet"/>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+      font-family: 'Poppins', sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .clock {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      height: 1000px;
+    }
+
+    .bar-container {
+      height: 1400px; /* Show only 1 digit at a time */
+      width: 60px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .number-line {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.4s ease-in-out;
+    }
+
+    .digit {
+      height: 40px;
+      width: 48px;
+      margin: 4px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+      font-weight: 600;
+      color: #ffffffcc;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      backdrop-filter: blur(6px);
+      box-shadow: inset 0 0 4px rgba(255,255,255,0.1), 0 2px 5px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .spacer {
+      visibility: hidden;
+    }
+
+    .highlight {
+      background: linear-gradient(to bottom right, #00f2fe, #4facfe);
+      color: #111;
+      font-weight: bold;
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(0,255,255,0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="clock" id="clock"></div>
+
+  <script>
+    const clock = document.getElementById('clock');
+    const digitRanges = [
+      [0, 2],  // H1
+      [0, 9],  // H2
+      [0, 5],  // M1
+      [0, 9],  // M2
+      [0, 5],  // S1
+      [0, 9]   // S2
+    ];
+
+    const maxDigits = 10; // To equalize all columns
+    const digitElements = [];
+    const digitHeight = 48; // 40px height + 8px margin
+
+    for (let i = 0; i < 6; i++) {
+      const container = document.createElement('div');
+      container.className = 'bar-container';
+
+      const line = document.createElement('div');
+      line.className = 'number-line';
+      line.id = `line-${i}`;
+
+      const [start, end] = digitRanges[i];
+      const rangeDigits = [];
+
+      // Add invisible spacers on top
+      for (let d = 0; d < (maxDigits - (end - start + 1)) / 2; d++) {
+        const spacer = document.createElement('div');
+        spacer.className = 'digit spacer';
+        spacer.textContent = '-';
+        line.appendChild(spacer);
+      }
+
+      // Actual digits
+      for (let d = start; d <= end; d++) {
+        const digit = document.createElement('div');
+        digit.className = 'digit';
+        digit.id = `digit-${i}-${d}`;
+        digit.textContent = d;
+        line.appendChild(digit);
+        rangeDigits.push(digit);
+      }
+
+      // Add invisible spacers on bottom
+      for (let d = 0; d < (maxDigits - (end - start + 1)) / 2; d++) {
+        const spacer = document.createElement('div');
+        spacer.className = 'digit spacer';
+        spacer.textContent = '-';
+        line.appendChild(spacer);
+      }
+
+      digitElements.push(rangeDigits);
+      container.appendChild(line);
+      clock.appendChild(container);
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, '0');
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const s = now.getSeconds().toString().padStart(2, '0');
+      const timeStr = h + m + s;
+
+      for (let i = 0; i < 6; i++) {
+        let digitValue = parseInt(timeStr[i]);
+
+        // Fix H2 range for 24-hour format
+        if (i === 1 && timeStr[0] === '2') {
+          digitValue = Math.min(digitValue, 3);
+        }
+
+        const [start, end] = digitRanges[i];
+        const visibleIndex = digitValue - start;
+
+        const offsetTop = ((maxDigits - (end - start + 1)) / 2) * digitHeight;
+        const translateY = visibleIndex * digitHeight;
+
+        const line = document.getElementById(`line-${i}`);
+        line.style.transform = `translateY(-${offsetTop + translateY}px)`;
+
+        digitElements[i].forEach(d => d.classList.remove('highlight'));
+        const currentDigit = document.getElementById(`digit-${i}-${digitValue}`);
+        if (currentDigit) currentDigit.classList.add('highlight');
+      }
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body>
+</html>
